@@ -4,8 +4,8 @@
   This code is butchered from the official ESP8266 SDK to make it work in a more Arduino like way.
   It also allows any GPIO pin to be used for PWM, rather than the hard coded 3 pins in the original.  
 */
-#ifndef __ESP8266_pwm_h__
-#define __ESP8266_pwm_h__
+#ifndef __ESP32_pwm_h__
+#define __ESP32_pwm_h__
 
 // bring in the ESP8266 hardware stuff
 extern "C" {
@@ -93,7 +93,7 @@ pwm_period_timer(void)
     ETS_INTR_UNLOCK();
 }
 
-class ESP8266_PWM {
+class ESP32_PWM {
   private:
   public:
     void connect(uint8_t index, uint8_t pin) {
