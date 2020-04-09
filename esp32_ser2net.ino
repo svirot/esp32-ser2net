@@ -1,17 +1,17 @@
 /*
-  ESP8266 mDNS serial wifi bridge by Daniel Parnell 2nd of May 2015
+  ESP32 mDNS serial wifi bridge by Daniel Parnell 2nd of May 2015
  */
 
 //#define BONJOUR_SUPPORT
 #define USE_WDT
 
-#include <ESP8266WiFi.h>
+#include <ESP32WiFi.h>
 #ifdef BONJOUR_SUPPORT
-#include <ESP8266mDNS.h>
+#include <ESP32mDNS.h>
 #endif
 #include <WiFiClient.h>
 
-#include "esp8266_pwm.h"
+#include "esp32_pwm.h"
 
 // application config
 
@@ -50,7 +50,7 @@ MDNSResponder mdns;
 #endif
 
 WiFiServer server(TCP_LISTEN_PORT);
-ESP8266_PWM pwm;
+ESP32_PWM pwm;
 
 #ifdef STATIC_IP
 IPAddress parse_ip_address(const char *str) {
