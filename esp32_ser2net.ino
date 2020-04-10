@@ -3,15 +3,14 @@
  */
 
 //#define BONJOUR_SUPPORT
-#define USE_WDT
 
-#include <ESP32WiFi.h>
+#include <WiFi.h>
 #ifdef BONJOUR_SUPPORT
-#include <ESP32mDNS.h>
+#include <ESPmDNS.h>
 #endif
 #include <WiFiClient.h>
 
-#include "esp32_pwm.h"
+#include <driver/uart.h>
 
 // application config
 
@@ -29,7 +28,7 @@
 #define WIFI_SSID "my network"
 #define WIFI_PASSWORD "supersecret password nobody could ever guess"
 
-#define BAUD_RATE 9600
+#define BAUD_RATE 19200
 #define TCP_LISTEN_PORT 9999
 
 // if the bonjour support is turned on, then use the following as the name
@@ -40,9 +39,12 @@
 
 // hardware config
 #define WIFI_LED 14
-//#define CONNECTION_LED 16
+#define CONNECTION_LED 16
 #define TX_LED 12
 #define RX_LED 13
+
+#define PWM_RESOLUTION 8
+#define PWM_MAX_DUTY 2^PWM_RESOLUTION
 
 #ifdef BONJOUR_SUPPORT
 // multicast DNS responder
@@ -50,7 +52,6 @@ MDNSResponder mdns;
 #endif
 
 WiFiServer server(TCP_LISTEN_PORT);
-ESP32_PWM pwm;
 
 #ifdef STATIC_IP
 IPAddress parse_ip_address(const char *str) {
@@ -100,15 +101,12 @@ void connect_to_wifi() {
   
   // Wait for WIFI connection
   while (WiFi.status() != WL_CONNECTED) {
-#ifdef USE_WDT
-    wdt_reset();
-#endif
-    pwm.set(0, (count & 1) ? PWM_MAX_DUTY : 0);
+    ledcWrite(0, (count & 1) ? PWM_MAX_DUTY : 0);
     count++;
     delay(250);
   }
   
-  pwm.set(0, PWM_MAX_DUTY);  
+  ledcWrite(0, PWM_MAX_DUTY);  
 }
 
 void error() {
@@ -122,17 +120,13 @@ void error() {
   
   while(1) {
     count++;
-    pwm.set(0, (count & 1) ? PWM_MAX_DUTY : 0);
+    ledcWrite(0, (count & 1) ? PWM_MAX_DUTY : 0);
     delay(100);
   }
 }
 
 void setup(void)
-{  
-#ifdef USE_WDT
-  wdt_enable(1000);
-#endif
-
+{
   digitalWrite(WIFI_LED, LOW);
 #ifdef CONNECTION_LED  
   digitalWrite(CONNECTION_LED, LOW);
@@ -148,9 +142,8 @@ void setup(void)
   pinMode(RX_LED, OUTPUT);
 
   // set up the Wifi LED for PWM
-  pwm.connect(0, WIFI_LED);
-  pwm.set(0, 0);
-  pwm.begin(1, 500);
+  ledcSetup(0, 500, PWM_RESOLUTION);
+  ledcAttachPin(WIFI_LED, 0);
   
   Serial.begin(BAUD_RATE);
   
@@ -169,8 +162,8 @@ void setup(void)
 }
 
 WiFiClient client;
-uint8 pulse = 0;
-uint8 pulse_dir = 1;
+uint8_t pulse = 0;
+uint8_t pulse_dir = 1;
 int pulse_counter = 1;
 
 void loop(void)
@@ -179,10 +172,6 @@ void loop(void)
   uint8_t net_buf[BUFFER_SIZE];
   uint8_t serial_buf[BUFFER_SIZE];
   
-#ifdef USE_WDT
-  wdt_reset();
-#endif
-
   if(WiFi.status() != WL_CONNECTED) {
     // we've lost the connection, so we need to reconnect
     if(client) {
@@ -206,7 +195,7 @@ void loop(void)
       }
     }
   
-    pwm.set(0, pulse);
+    ledcWrite(0, pulse);
   }
   
 #ifdef BONJOUR_SUPPORT
